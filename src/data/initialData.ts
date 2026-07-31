@@ -1,0 +1,163 @@
+import { User, MarketPricePoint, PurchaseRecord, SellRecord, PriceAlertRule, NotificationItem } from '../types';
+
+export const initialUsers: User[] = [
+  {
+    id: 'USR-1001',
+    fullName: 'Rahul Sharma',
+    dob: '1992-05-14',
+    email: 'rahul.sharma@example.com',
+    phone: '+91 98765 43210',
+    kycId: 'ABCPS1234F',
+    walletBalance: 250000.00,
+    createdAt: '2026-06-01T09:00:00Z',
+    pin: '1234',
+  },
+  {
+    id: 'USR-1002',
+    fullName: 'Priya Patel',
+    dob: '1988-11-20',
+    email: 'priya.patel@example.com',
+    phone: '+91 98123 45678',
+    kycId: 'XYZPP8765K',
+    walletBalance: 420000.00,
+    createdAt: '2026-06-15T10:30:00Z',
+    pin: '5678',
+  },
+  {
+    id: 'USR-1003',
+    fullName: 'Amit Verma',
+    dob: '1995-02-10',
+    email: 'amit.verma@example.com',
+    phone: '+91 97654 32109',
+    kycId: 'AVPPA9988M',
+    walletBalance: 180000.00,
+    createdAt: '2026-07-01T11:00:00Z',
+    pin: '0000',
+  },
+  {
+    id: 'USR-1004',
+    fullName: 'Rajesh Gupta',
+    dob: '1982-08-04',
+    email: 'rajesh.gupta@example.com',
+    phone: '+91 99887 76655',
+    kycId: 'RGPPR3322L',
+    walletBalance: 600000.00,
+    createdAt: '2026-07-10T14:15:00Z',
+    pin: '1111',
+  }
+];
+
+export const initialMarketPriceHistory: MarketPricePoint[] = [
+  { id: 'P-1', pricePerKg: 520, timestamp: '2026-07-23T10:00:00Z', change24h: 0, high24h: 530, low24h: 515, source: 'SYSTEM' },
+  { id: 'P-2', pricePerKg: 535, timestamp: '2026-07-24T10:00:00Z', change24h: 2.88, high24h: 540, low24h: 520, source: 'SYSTEM' },
+  { id: 'P-3', pricePerKg: 550, timestamp: '2026-07-25T10:00:00Z', change24h: 2.80, high24h: 555, low24h: 530, source: 'SYSTEM' },
+  { id: 'P-4', pricePerKg: 542, timestamp: '2026-07-26T10:00:00Z', change24h: -1.45, high24h: 552, low24h: 538, source: 'SYSTEM' },
+  { id: 'P-5', pricePerKg: 568, timestamp: '2026-07-27T10:00:00Z', change24h: 4.80, high24h: 572, low24h: 540, source: 'SYSTEM' },
+  { id: 'P-6', pricePerKg: 585, timestamp: '2026-07-28T10:00:00Z', change24h: 2.99, high24h: 590, low24h: 565, source: 'SYSTEM' },
+  { id: 'P-7', pricePerKg: 600, timestamp: '2026-07-29T10:00:00Z', change24h: 2.56, high24h: 610, low24h: 580, source: 'SIMULATOR' },
+];
+
+export const initialPurchases: PurchaseRecord[] = [
+  {
+    purchaseId: 'BUY-88401',
+    userId: 'USR-1001',
+    userName: 'Rahul Sharma',
+    purchaseDate: '2026-07-24T08:15:00Z',
+    quantityKg: 100,
+    pricePerKg: 520.00,
+    subtotal: 52000.00,
+    taxAmount: 0,
+    platformFee: 0,
+    totalAmount: 52000.00,
+    unsoldQuantityKg: 40,
+    status: 'PARTIALLY_SOLD',
+    note: 'Initial strategic bulk inventory acquisition',
+  },
+  {
+    purchaseId: 'BUY-88402',
+    userId: 'USR-1002',
+    userName: 'Priya Patel',
+    purchaseDate: '2026-07-25T11:30:00Z',
+    quantityKg: 200,
+    pricePerKg: 550.00,
+    subtotal: 110000.00,
+    taxAmount: 0,
+    platformFee: 0,
+    totalAmount: 110000.00,
+    unsoldQuantityKg: 200,
+    status: 'COMPLETED',
+    note: 'Hedge position for automotive supply order',
+  },
+  {
+    purchaseId: 'BUY-88403',
+    userId: 'USR-1001',
+    userName: 'Rahul Sharma',
+    purchaseDate: '2026-07-27T14:20:00Z',
+    quantityKg: 150,
+    pricePerKg: 568.00,
+    subtotal: 85200.00,
+    taxAmount: 0,
+    platformFee: 0,
+    totalAmount: 85200.00,
+    unsoldQuantityKg: 150,
+    status: 'COMPLETED',
+    note: 'Accumulation ahead of quarterly industrial demand',
+  },
+  {
+    purchaseId: 'BUY-88404',
+    userId: 'USR-1003',
+    userName: 'Amit Verma',
+    purchaseDate: '2026-07-28T16:00:00Z',
+    quantityKg: 80,
+    pricePerKg: 585.00,
+    subtotal: 46800.00,
+    taxAmount: 0,
+    platformFee: 0,
+    totalAmount: 46800.00,
+    unsoldQuantityKg: 80,
+    status: 'COMPLETED',
+    note: 'Spot purchase for extrusion plant',
+  },
+];
+
+export const initialSales: SellRecord[] = [
+  {
+    sellId: 'SEL-99101',
+    userId: 'USR-1001',
+    userName: 'Rahul Sharma',
+    purchaseId: 'BUY-88401',
+    sellDate: '2026-07-29T09:30:00Z',
+    quantityKg: 60,
+    originalBuyPricePerKg: 520.00,
+    sellPricePerKg: 600.00,
+    totalBuyAmount: 31200.00,
+    totalSellAmount: 36000.00,
+    realizedPnL: 4800.00,
+    pnlPercentage: 15.38,
+    note: 'Partial profit booking on lot BUY-88401',
+  },
+];
+
+export const initialAlerts: PriceAlertRule[] = [
+  { id: 'ALT-1', targetPrice: 620, condition: 'ABOVE', active: true, createdAt: '2026-07-28T10:00:00Z', note: 'Take profit alert target' },
+  { id: 'ALT-2', targetPrice: 540, condition: 'BELOW', active: true, createdAt: '2026-07-28T10:00:00Z', note: 'Re-entry buy dip target' },
+];
+
+export const initialNotifications: NotificationItem[] = [
+  {
+    id: 'NOTIF-1',
+    title: 'Spot Price Updated',
+    message: 'Aluminum spot price touched ₹600/kg (+2.56%). High: ₹610/kg',
+    type: 'PRICE_ALERT',
+    timestamp: '2026-07-29T10:00:00Z',
+    read: false,
+  },
+  {
+    id: 'NOTIF-2',
+    title: 'Successful Sale Executed',
+    message: 'Rahul Sharma liquidated 60 Kg at ₹600/kg with Realized Profit of +₹4,800 (+15.38%)',
+    type: 'TRADE_SELL',
+    timestamp: '2026-07-29T09:30:00Z',
+    read: false,
+  },
+];
