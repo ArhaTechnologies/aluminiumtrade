@@ -452,65 +452,55 @@ app.post('/api/auth/login', async (req, res) => {
   return res.status(401).json({ error: 'Invalid Email/Phone/ID or Security PIN.' });
 });
 
-// GET Purchases from PostgreSQL
+// GET Purchases (PostgreSQL or In-Memory fallback)
 app.get('/api/purchases', async (req, res) => {
   const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
-  try {
-    const result = await pool.query('SELECT * FROM purchases ORDER BY purchase_date DESC');
-    const mapped = result.rows.map((row) => ({
-      purchaseId: row.purchase_id,
-      userId: row.user_id,
-      userName: row.user_name,
-      purchaseDate: row.purchase_date,
-      quantityKg: parseFloat(row.quantity_kg),
-      pricePerKg: parseFloat(row.price_per_kg),
-      subtotal: parseFloat(row.subtotal),
-      taxAmount: parseFloat(row.tax_amount),
-      platformFee: parseFloat(row.platform_fee),
-      totalAmount: parseFloat(row.total_amount),
-      unsoldQuantityKg: parseFloat(row.unsold_quantity_kg),
-      status: row.status,
-      note: row.note,
-    }));
-    res.json(mapped);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  if (pool) {
+    try {
+      const result = await pool.query('SELECT * FROM purchases ORDER BY purchase_date DESC');
+      if (result.rows) {
+        const mapped = result.rows.map((row) => ({
+          purchaseId: row.purchase_id,
+          userId: row.user_id,
+          userName: row.user_name,
+          purchaseDate: row.purchase_date,
+          quantityKg: parseFloat(row.quantity_kg),
+          pricePerKg: parseFloat(row.price_per_kg),
+          subtotal: parseFloat(row.subtotal),
+          taxAmount: parseFloat(row.tax_amount),
+          platformFee: parseFloat(row.platform_fee),
+          totalAmount: parseFloat(row.total_amount),
+          unsoldQuantityKg: parseFloat(row.unsold_quantity_kg),
+          status: row.status,
+          note: row.note,
+        }));
+        return res.json(mapped);
+      }
+    } catch (err) {
+      console.log('[Purchases Route] DB query fallback to memory store');
+    }
   }
+  return res.json(inMemoryPurchases);
 });
 
-// POST Purchase (Create / Update Buy Order in PostgreSQL)
+// POST Purchase (Create / Update Buy Order)
 app.post('/api/purchases', async (req, res) => {
-  const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
-  const {
-    purchaseId,
-    userId,
-    userName,
-    purchaseDate,
-    quantityKg,
-    pricePerKg,
-    subtotal,
-    taxAmount,
-    platformFee,
-    totalAmount,
-    unsoldQuantityKg,
-    status,
-    note,
-  } = req.body;
+  const purchase = req.body;
+  const existingIdx = inMemoryPurchases.findIndex((p) => p.purchaseId === purchase.purchaseId);
+  if (existingIdx >= 0) {
+    inMemoryPurchases[existingIdx] = { ...inMemoryPurchases[existingIdx], ...purchase };
+  } else {
+    inMemoryPurchases.unshift(purchase);
+  }
 
-  try {
-    await pool.query(
-      `INSERT INTO purchases (purchase_id, user_id, user_name, purchase_date, quantity_kg, price_per_kg, subtotal, tax_amount, platform_fee, total_amount, unsold_quantity_kg, status, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-       ON CONFLICT (purchase_id) DO UPDATE SET
-         unsold_quantity_kg = EXCLUDED.unsold_quantity_kg,
-         status = EXCLUDED.status`,
-      [
+  const pool = getPgPool();
+  if (pool) {
+    try {
+      const {
         purchaseId,
         userId,
         userName,
-        purchaseDate || new Date().toISOString(),
+        purchaseDate,
         quantityKg,
         pricePerKg,
         subtotal,
@@ -518,74 +508,89 @@ app.post('/api/purchases', async (req, res) => {
         platformFee,
         totalAmount,
         unsoldQuantityKg,
-        status || 'COMPLETED',
-        note || '',
-      ]
-    );
-    res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+        status,
+        note,
+      } = purchase;
+
+      await pool.query(
+        `INSERT INTO purchases (purchase_id, user_id, user_name, purchase_date, quantity_kg, price_per_kg, subtotal, tax_amount, platform_fee, total_amount, unsold_quantity_kg, status, note)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         ON CONFLICT (purchase_id) DO UPDATE SET
+           unsold_quantity_kg = EXCLUDED.unsold_quantity_kg,
+           status = EXCLUDED.status`,
+        [
+          purchaseId,
+          userId,
+          userName,
+          purchaseDate || new Date().toISOString(),
+          quantityKg,
+          pricePerKg,
+          subtotal,
+          taxAmount,
+          platformFee,
+          totalAmount,
+          unsoldQuantityKg,
+          status || 'COMPLETED',
+          note || '',
+        ]
+      );
+    } catch (err) {
+      console.log('[Post Purchase] DB update fallback to memory store');
+    }
   }
+  return res.json({ success: true });
 });
 
-// GET Sales from PostgreSQL
+// GET Sales (PostgreSQL or In-Memory fallback)
 app.get('/api/sales', async (req, res) => {
   const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
-  try {
-    const result = await pool.query('SELECT * FROM sales ORDER BY sell_date DESC');
-    const mapped = result.rows.map((row) => ({
-      sellId: row.sell_id,
-      userId: row.user_id,
-      userName: row.user_name,
-      purchaseId: row.purchase_id,
-      sellDate: row.sell_date,
-      quantityKg: parseFloat(row.quantity_kg),
-      originalBuyPricePerKg: parseFloat(row.original_buy_price_per_kg),
-      sellPricePerKg: parseFloat(row.sell_price_per_kg),
-      totalBuyAmount: parseFloat(row.total_buy_amount),
-      totalSellAmount: parseFloat(row.total_sell_amount),
-      realizedPnL: parseFloat(row.realized_pnl),
-      pnlPercentage: parseFloat(row.pnl_percentage),
-      note: row.note,
-    }));
-    res.json(mapped);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  if (pool) {
+    try {
+      const result = await pool.query('SELECT * FROM sales ORDER BY sell_date DESC');
+      if (result.rows) {
+        const mapped = result.rows.map((row) => ({
+          sellId: row.sell_id,
+          userId: row.user_id,
+          userName: row.user_name,
+          purchaseId: row.purchase_id,
+          sellDate: row.sell_date,
+          quantityKg: parseFloat(row.quantity_kg),
+          originalBuyPricePerKg: parseFloat(row.original_buy_price_per_kg),
+          sellPricePerKg: parseFloat(row.sell_price_per_kg),
+          totalBuyAmount: parseFloat(row.total_buy_amount),
+          totalSellAmount: parseFloat(row.total_sell_amount),
+          realizedPnL: parseFloat(row.realized_pnl),
+          pnlPercentage: parseFloat(row.pnl_percentage),
+          note: row.note,
+        }));
+        return res.json(mapped);
+      }
+    } catch (err) {
+      console.log('[Sales Route] DB query fallback to memory store');
+    }
   }
+  return res.json(inMemorySales);
 });
 
-// POST Sale (Create Sell Order in PostgreSQL)
+// POST Sale (Create Sell Order)
 app.post('/api/sales', async (req, res) => {
-  const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
-  const {
-    sellId,
-    userId,
-    userName,
-    purchaseId,
-    sellDate,
-    quantityKg,
-    originalBuyPricePerKg,
-    sellPricePerKg,
-    totalBuyAmount,
-    totalSellAmount,
-    realizedPnL,
-    pnlPercentage,
-    note,
-  } = req.body;
+  const sale = req.body;
+  const existingIdx = inMemorySales.findIndex((s) => s.sellId === sale.sellId);
+  if (existingIdx >= 0) {
+    inMemorySales[existingIdx] = { ...inMemorySales[existingIdx], ...sale };
+  } else {
+    inMemorySales.unshift(sale);
+  }
 
-  try {
-    await pool.query(
-      `INSERT INTO sales (sell_id, user_id, user_name, purchase_id, sell_date, quantity_kg, original_buy_price_per_kg, sell_price_per_kg, total_buy_amount, total_sell_amount, realized_pnl, pnl_percentage, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-       ON CONFLICT (sell_id) DO NOTHING`,
-      [
+  const pool = getPgPool();
+  if (pool) {
+    try {
+      const {
         sellId,
         userId,
         userName,
         purchaseId,
-        sellDate || new Date().toISOString(),
+        sellDate,
         quantityKg,
         originalBuyPricePerKg,
         sellPricePerKg,
@@ -593,13 +598,34 @@ app.post('/api/sales', async (req, res) => {
         totalSellAmount,
         realizedPnL,
         pnlPercentage,
-        note || '',
-      ]
-    );
-    res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+        note,
+      } = sale;
+
+      await pool.query(
+        `INSERT INTO sales (sell_id, user_id, user_name, purchase_id, sell_date, quantity_kg, original_buy_price_per_kg, sell_price_per_kg, total_buy_amount, total_sell_amount, realized_pnl, pnl_percentage, note)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         ON CONFLICT (sell_id) DO NOTHING`,
+        [
+          sellId,
+          userId,
+          userName,
+          purchaseId,
+          sellDate || new Date().toISOString(),
+          quantityKg,
+          originalBuyPricePerKg,
+          sellPricePerKg,
+          totalBuyAmount,
+          totalSellAmount,
+          realizedPnL,
+          pnlPercentage,
+          note || '',
+        ]
+      );
+    } catch (err) {
+      console.log('[Post Sale] DB update fallback to memory store');
+    }
   }
+  return res.json({ success: true });
 });
 
 // Gemini AI Helper
