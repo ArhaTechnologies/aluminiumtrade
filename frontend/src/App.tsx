@@ -13,6 +13,7 @@ import { UserProfileView } from './components/views/UserProfileView';
 import { ProfitCalculatorView } from './components/views/ProfitCalculatorView';
 import { LeaderboardView } from './components/views/LeaderboardView';
 import { AlertsView } from './components/views/AlertsView';
+import { ReportsExportView } from './components/views/ReportsExportView';
 import { DatabaseView } from './components/views/DatabaseView';
 import { AiAnalystView } from './components/views/AiAnalystView';
 import { AuthPinModal } from './components/modals/AuthPinModal';
@@ -35,6 +36,7 @@ const MainContent: React.FC = () => {
       {activeTab === 'calculator' && <ProfitCalculatorView />}
       {activeTab === 'leaderboard' && <LeaderboardView />}
       {activeTab === 'alerts' && <AlertsView />}
+      {activeTab === 'reports' && <ReportsExportView />}
       {activeTab === 'database' && <DatabaseView />}
     </main>
   );

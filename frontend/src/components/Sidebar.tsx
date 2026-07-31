@@ -72,6 +72,7 @@ export const Sidebar: React.FC = () => {
       badge: unreadAlerts > 0 ? `${unreadAlerts}` : undefined,
       badgeColor: 'bg-amber-500/20 text-amber-400',
     },
+    { id: 'reports', labelKey: 'reports', icon: FileText },
   ];
 
   const handleSelectTab = (tabId: ActiveTab) => {
