@@ -7,8 +7,8 @@ import {
   AlertCircle,
   Calculator,
   Boxes,
-  Sparkles,
   Zap,
+  Wallet,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -32,13 +32,12 @@ export const BuyView: React.FC = () => {
   );
 
   const selectedUser = users.find((u) => u.id === selectedUserId) || users[0];
-
   const unitPrice = currentSpotPrice.pricePerKg;
 
   const subtotal = quantityInput * unitPrice;
   const totalPayable = subtotal;
-
   const hasEnoughCash = selectedUser ? selectedUser.walletBalance >= totalPayable : false;
+  const remainingWallet = selectedUser ? selectedUser.walletBalance - totalPayable : 0;
 
   const handleExecuteBuy = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +92,26 @@ export const BuyView: React.FC = () => {
         </div>
       </div>
 
+      {/* Always Visible Buyer Selector Bar (Identical to Seller Selector design) */}
+      <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex-1 space-y-1">
+          <label className="text-xs font-bold text-slate-300 block">
+            Select Buyer / Trader
+          </label>
+          <select
+            value={selectedUser?.id || ''}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-700 text-white font-semibold text-xs rounded-xl p-3 focus:outline-none focus:border-cyan-500 cursor-pointer"
+          >
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                👤 {u.fullName} ({formatINR(u.walletBalance)} wallet balance)
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {resultMessage && (
         <div
           className={`p-4 rounded-xl text-xs font-semibold flex items-center space-x-2 border ${
@@ -114,24 +133,6 @@ export const BuyView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Form Controls */}
         <form onSubmit={handleExecuteBuy} className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5">
-          {/* Select User */}
-          <div>
-            <label className="text-xs font-bold text-slate-300 block mb-1.5">
-              Select Buyer / Trader
-            </label>
-            <select
-              value={selectedUser?.id || ''}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-white font-semibold text-xs rounded-xl p-3 focus:outline-none focus:border-cyan-500 cursor-pointer"
-            >
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  👤 {u.fullName} ({formatINR(u.walletBalance)})
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Quantity Input in Kg */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -150,6 +151,24 @@ export const BuyView: React.FC = () => {
               placeholder="e.g. 100"
               className="w-full bg-slate-900 border border-slate-700 text-white font-extrabold text-lg rounded-xl p-3 focus:outline-none focus:border-cyan-500"
             />
+
+            {/* Quick Preset Buttons */}
+            <div className="flex items-center gap-2 mt-2.5">
+              {[100, 500, 1000, 5000].map((qty) => (
+                <button
+                  key={qty}
+                  type="button"
+                  onClick={() => setQuantityInput(qty)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                    quantityInput === qty
+                      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  +{qty} Kg
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Trade Notes / Remarks */}
@@ -166,7 +185,7 @@ export const BuyView: React.FC = () => {
             />
           </div>
 
-          {/* Wallet Balance Warning/Confirmation */}
+          {/* Wallet Balance Status */}
           {selectedUser && (
             <div
               className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
@@ -175,8 +194,11 @@ export const BuyView: React.FC = () => {
                   : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
               }`}
             >
-              <span>Buyer Cash Balance:</span>
-              <strong className="font-extrabold">{formatINR(selectedUser.walletBalance)}</strong>
+              <div className="flex items-center space-x-2">
+                <Wallet className="w-4 h-4" />
+                <span>Buyer Cash Balance:</span>
+              </div>
+              <strong className="font-mono text-sm">{formatINR(selectedUser.walletBalance)}</strong>
             </div>
           )}
 
@@ -194,41 +216,54 @@ export const BuyView: React.FC = () => {
           </button>
         </form>
 
-        {/* Live Calculation Receipt Breakdown */}
+        {/* Live Calculation Receipt Breakdown Side */}
         <div className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 border-b border-slate-800 pb-3 mb-4">
               <Calculator className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-bold text-white">Live Cost Breakdown</h3>
+              <h3 className="text-sm font-bold text-white">Pre-Execution Invoice Audit</h3>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between text-slate-300">
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between items-center text-slate-300">
+                <span>Selected Buyer:</span>
+                <span className="font-bold text-white">{selectedUser?.fullName}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-300">
                 <span>Selected Quantity:</span>
                 <span className="font-bold text-white">{quantityInput} Kg</span>
               </div>
 
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between items-center text-slate-300">
                 <span>Spot Price / Kg:</span>
-                <span className="font-bold text-cyan-400">₹{unitPrice.toFixed(2)}</span>
+                <span className="font-bold text-cyan-400">₹{unitPrice.toFixed(2)}/kg</span>
               </div>
 
-              <div className="flex justify-between text-slate-300 border-t border-slate-800/80 pt-2">
+              <div className="flex justify-between items-center text-slate-300 border-t border-slate-800/80 pt-2">
                 <span>Subtotal Amount:</span>
-                <span className="font-bold text-white">{formatINR(subtotal)}</span>
+                <span className="font-mono text-slate-200 font-bold">{formatINR(subtotal)}</span>
               </div>
 
-              <div className="border-t-2 border-dashed border-slate-700 my-3"></div>
+              <div className="border-t border-slate-800 my-2"></div>
 
-              <div className="flex justify-between text-sm font-black text-white bg-slate-900 p-3 rounded-xl border border-slate-800">
+              <div className="flex justify-between items-center text-sm font-black text-white bg-slate-900 p-3 rounded-xl border border-slate-800">
                 <span>Total Payable Amount:</span>
-                <span className="text-cyan-400 font-extrabold">{formatINR(totalPayable)}</span>
+                <span className="text-cyan-400 font-mono text-base font-black">{formatINR(totalPayable)}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-[11px] pt-1">
+                <span className="text-slate-400">Wallet After Purchase:</span>
+                <span className={`font-mono font-bold ${remainingWallet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {formatINR(remainingWallet)}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl text-[11px] text-slate-400 leading-relaxed">
-            💡 Purchased stock will immediately be credited to the trader's active holdings inventory with lot tracking enabled.
+          <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl text-[11px] text-slate-400 leading-relaxed flex items-start space-x-2">
+            <Boxes className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+            <span>Purchased stock will immediately be credited to {selectedUser?.fullName}'s active inventory with lot tracking enabled.</span>
           </div>
         </div>
       </div>
