@@ -41,52 +41,7 @@ app.get('/api/health', (req, res) => {
 let pgPool: InstanceType<typeof Pool> | null = null;
 
 // Global Server In-Memory Store (Synchronized across all devices if PostgreSQL is offline)
-const inMemoryUsers: any[] = [
-  {
-    id: 'USR-1001',
-    fullName: 'Rajesh Sharma (Senior Trader)',
-    dob: '1985-04-12',
-    email: 'rajesh.sharma@alutrade.in',
-    phone: '+91 98765 43210',
-    kycId: 'PAN-RSH9876K',
-    walletBalance: 250000.00,
-    pin: '1234',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'USR-1002',
-    fullName: 'Ananya Verma (Portfolio Manager)',
-    dob: '1990-08-25',
-    email: 'ananya.verma@alutrade.in',
-    phone: '+91 98123 45678',
-    kycId: 'PAN-AVM4321L',
-    walletBalance: 180000.00,
-    pin: '1234',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'USR-1003',
-    fullName: 'Vikramaditya Rao (Industrial Extrusions)',
-    dob: '1982-11-05',
-    email: 'vikram.rao@alutrade.in',
-    phone: '+91 99887 76655',
-    kycId: 'PAN-VRA7766M',
-    walletBalance: 320000.00,
-    pin: '1234',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'USR-1004',
-    fullName: 'Priya Patel (Spot Trader)',
-    dob: '1995-02-18',
-    email: 'priya.patel@alutrade.in',
-    phone: '+91 97766 55443',
-    kycId: 'PAN-PPA5544N',
-    walletBalance: 150000.00,
-    pin: '1234',
-    createdAt: new Date().toISOString(),
-  },
-];
+const inMemoryUsers: any[] = [];
 const inMemoryPurchases: any[] = [];
 const inMemorySales: any[] = [];
 
@@ -182,46 +137,7 @@ async function initPostgresDb() {
         );
       `);
 
-      // Seed initial users if table is empty
-      const userCountRes = await client.query('SELECT COUNT(*) FROM users');
-      if (parseInt(userCountRes.rows[0].count, 10) === 0) {
-        console.log('[PostgreSQL Seed] Seeding initial users...');
-        await client.query(`
-          INSERT INTO users (id, full_name, dob, email, phone, kyc_id, wallet_balance, pin, created_at) VALUES
-          ('USR-1001', 'Rahul Sharma', '1992-05-14', 'rahul.sharma@example.com', '+91 98765 43210', 'ABCPS1234F', 250000.00, '1234', '2026-06-01T09:00:00Z'),
-          ('USR-1002', 'Priya Patel', '1988-11-20', 'priya.patel@example.com', '+91 98123 45678', 'XYZPP8765K', 420000.00, '5678', '2026-06-15T10:30:00Z'),
-          ('USR-1003', 'Amit Verma', '1995-02-10', 'amit.verma@example.com', '+91 97654 32109', 'AVPPA9988M', 180000.00, '0000', '2026-07-01T11:00:00Z'),
-          ('USR-1004', 'Rajesh Gupta', '1982-08-04', 'rajesh.gupta@example.com', '+91 99887 76655', 'RGPPR3322L', 600000.00, '1111', '2026-07-10T14:15:00Z')
-          ON CONFLICT DO NOTHING;
-        `);
-      }
-
-      // Seed initial purchases if table is empty
-      const purchaseCountRes = await client.query('SELECT COUNT(*) FROM purchases');
-      if (parseInt(purchaseCountRes.rows[0].count, 10) === 0) {
-        console.log('[PostgreSQL Seed] Seeding initial purchases...');
-        await client.query(`
-          INSERT INTO purchases (purchase_id, user_id, user_name, purchase_date, quantity_kg, price_per_kg, subtotal, tax_amount, platform_fee, total_amount, unsold_quantity_kg, status, note) VALUES
-          ('BUY-88401', 'USR-1001', 'Rahul Sharma', '2026-07-24T08:15:00Z', 100, 520.00, 52000.00, 0, 0, 52000.00, 40, 'PARTIALLY_SOLD', 'Initial strategic bulk inventory acquisition'),
-          ('BUY-88402', 'USR-1002', 'Priya Patel', '2026-07-25T11:30:00Z', 200, 550.00, 110000.00, 0, 0, 110000.00, 200, 'COMPLETED', 'Hedge position for automotive supply order'),
-          ('BUY-88403', 'USR-1001', 'Rahul Sharma', '2026-07-27T14:20:00Z', 150, 568.00, 85200.00, 0, 0, 85200.00, 150, 'COMPLETED', 'Accumulation ahead of quarterly industrial demand'),
-          ('BUY-88404', 'USR-1003', 'Amit Verma', '2026-07-28T16:00:00Z', 80, 585.00, 46800.00, 0, 0, 46800.00, 80, 'COMPLETED', 'Spot purchase for extrusion plant')
-          ON CONFLICT DO NOTHING;
-        `);
-      }
-
-      // Seed initial sales if table is empty
-      const salesCountRes = await client.query('SELECT COUNT(*) FROM sales');
-      if (parseInt(salesCountRes.rows[0].count, 10) === 0) {
-        console.log('[PostgreSQL Seed] Seeding initial sales...');
-        await client.query(`
-          INSERT INTO sales (sell_id, user_id, user_name, purchase_id, sell_date, quantity_kg, original_buy_price_per_kg, sell_price_per_kg, total_buy_amount, total_sell_amount, realized_pnl, pnl_percentage, note) VALUES
-          ('SEL-99101', 'USR-1001', 'Rahul Sharma', 'BUY-88401', '2026-07-29T09:30:00Z', 60, 520.00, 600.00, 31200.00, 36000.00, 4800.00, 15.38, 'Partial profit booking on lot BUY-88401')
-          ON CONFLICT DO NOTHING;
-        `);
-      }
-
-      return { ok: true, message: 'PostgreSQL tables and demo data successfully verified/created.' };
+      return { ok: true, message: 'PostgreSQL database tables successfully verified/created.' };
     } finally {
       client.release();
     }
