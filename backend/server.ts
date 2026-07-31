@@ -40,6 +40,56 @@ app.get('/api/health', (req, res) => {
 // Lazy-initialized PostgreSQL Connection Pool
 let pgPool: InstanceType<typeof Pool> | null = null;
 
+// Global Server In-Memory Store (Synchronized across all devices if PostgreSQL is offline)
+const inMemoryUsers: any[] = [
+  {
+    id: 'USR-1001',
+    fullName: 'Rajesh Sharma (Senior Trader)',
+    dob: '1985-04-12',
+    email: 'rajesh.sharma@alutrade.in',
+    phone: '+91 98765 43210',
+    kycId: 'PAN-RSH9876K',
+    walletBalance: 250000.00,
+    pin: '1234',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'USR-1002',
+    fullName: 'Ananya Verma (Portfolio Manager)',
+    dob: '1990-08-25',
+    email: 'ananya.verma@alutrade.in',
+    phone: '+91 98123 45678',
+    kycId: 'PAN-AVM4321L',
+    walletBalance: 180000.00,
+    pin: '1234',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'USR-1003',
+    fullName: 'Vikramaditya Rao (Industrial Extrusions)',
+    dob: '1982-11-05',
+    email: 'vikram.rao@alutrade.in',
+    phone: '+91 99887 76655',
+    kycId: 'PAN-VRA7766M',
+    walletBalance: 320000.00,
+    pin: '1234',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'USR-1004',
+    fullName: 'Priya Patel (Spot Trader)',
+    dob: '1995-02-18',
+    email: 'priya.patel@alutrade.in',
+    phone: '+91 97766 55443',
+    kycId: 'PAN-PPA5544N',
+    walletBalance: 150000.00,
+    pin: '1234',
+    createdAt: new Date().toISOString(),
+  },
+];
+const inMemoryPurchases: any[] = [];
+const inMemorySales: any[] = [];
+
 function getPgPool() {
   if (!pgPool) {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:123456@localhost:5433/aluminum_trading';
@@ -220,125 +270,180 @@ app.post('/api/db/init', async (req, res) => {
   }
 });
 
-// GET Users from PostgreSQL
+// GET Users (PostgreSQL or In-Memory fallback)
 app.get('/api/users', async (req, res) => {
   const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
-  try {
-    const result = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
-    const mapped = result.rows.map((row) => ({
-      id: row.id,
-      fullName: row.full_name,
-      dob: row.dob,
-      email: row.email,
-      phone: row.phone,
-      kycId: row.kyc_id,
-      walletBalance: parseFloat(row.wallet_balance),
-      pin: row.pin,
-      createdAt: row.created_at,
-    }));
-    res.json(mapped);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  if (pool) {
+    try {
+      const result = await pool.query('SELECT * FROM users ORDER BY created_at ASC');
+      if (result.rows && result.rows.length > 0) {
+        const mapped = result.rows.map((row) => ({
+          id: row.id,
+          fullName: row.full_name,
+          dob: row.dob,
+          email: row.email,
+          phone: row.phone,
+          kycId: row.kyc_id,
+          walletBalance: parseFloat(row.wallet_balance),
+          pin: row.pin,
+          createdAt: row.created_at,
+        }));
+        return res.json(mapped);
+      }
+    } catch (err) {
+      console.log('[Users Route] PostgreSQL query fallback to memory store');
+    }
   }
+  return res.json(inMemoryUsers);
 });
 
-// POST User (Create / Update in PostgreSQL)
+// POST User (Create / Update)
 app.post('/api/users', async (req, res) => {
   const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
   const { id, fullName, dob, email, phone, kycId, walletBalance, pin } = req.body;
-  try {
-    await pool.query(
-      `INSERT INTO users (id, full_name, dob, email, phone, kyc_id, wallet_balance, pin)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (id) DO UPDATE SET
-         full_name = EXCLUDED.full_name,
-         dob = EXCLUDED.dob,
-         email = EXCLUDED.email,
-         phone = EXCLUDED.phone,
-         kyc_id = EXCLUDED.kyc_id,
-         wallet_balance = EXCLUDED.wallet_balance,
-         pin = EXCLUDED.pin`,
-      [id, fullName, dob || '', email || '', phone || '', kycId || '', walletBalance, pin || '1234']
-    );
-    await pool.query('UPDATE purchases SET user_name = $1 WHERE user_id = $2', [fullName, id]);
-    await pool.query('UPDATE sales SET user_name = $1 WHERE user_id = $2', [fullName, id]);
-    res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+
+  // Update in memory store
+  const existingIdx = inMemoryUsers.findIndex((u) => u.id === id);
+  const userObj = {
+    id: id || `USR-${Math.floor(1000 + Math.random() * 9000)}`,
+    fullName,
+    dob: dob || '',
+    email: email || '',
+    phone: phone || '',
+    kycId: kycId || '',
+    walletBalance: parseFloat(walletBalance || 100000),
+    pin: pin || '1234',
+    createdAt: new Date().toISOString(),
+  };
+
+  if (existingIdx >= 0) {
+    inMemoryUsers[existingIdx] = { ...inMemoryUsers[existingIdx], ...userObj };
+  } else {
+    inMemoryUsers.push(userObj);
   }
+
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO users (id, full_name, dob, email, phone, kyc_id, wallet_balance, pin)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (id) DO UPDATE SET
+           full_name = EXCLUDED.full_name,
+           dob = EXCLUDED.dob,
+           email = EXCLUDED.email,
+           phone = EXCLUDED.phone,
+           kyc_id = EXCLUDED.kyc_id,
+           wallet_balance = EXCLUDED.wallet_balance,
+           pin = EXCLUDED.pin`,
+        [userObj.id, userObj.fullName, userObj.dob, userObj.email, userObj.phone, userObj.kycId, userObj.walletBalance, userObj.pin]
+      );
+    } catch (err) {
+      console.log('[Post User] DB update fallback to memory');
+    }
+  }
+  return res.json({ success: true, user: userObj });
 });
 
-// DELETE User from PostgreSQL
+// DELETE User
 app.delete('/api/users/:id', async (req, res) => {
-  const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
   const { id } = req.params;
-  try {
-    await pool.query('DELETE FROM sales WHERE user_id = $1', [id]);
-    await pool.query('DELETE FROM purchases WHERE user_id = $1', [id]);
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ success: true, message: `User ${id} deleted successfully` });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  const idx = inMemoryUsers.findIndex((u) => u.id === id);
+  if (idx >= 0) {
+    inMemoryUsers.splice(idx, 1);
   }
+
+  const pool = getPgPool();
+  if (pool) {
+    try {
+      await pool.query('DELETE FROM sales WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM purchases WHERE user_id = $1', [id]);
+      await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    } catch (err) {
+      console.log('[Delete User] DB fallback to memory');
+    }
+  }
+  return res.json({ success: true, message: `User ${id} deleted successfully` });
 });
 
 // POST Auth Signup
 app.post('/api/auth/signup', async (req, res) => {
-  const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
   const { fullName, dob, email, phone, kycId, walletBalance, pin } = req.body;
   const id = `USR-${Math.floor(1000 + Math.random() * 9000)}`;
-  try {
-    const existing = await pool.query('SELECT * FROM users WHERE email = $1 OR phone = $2', [email, phone]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'User with this email or phone number already exists.' });
-    }
-    await pool.query(
-      `INSERT INTO users (id, full_name, dob, email, phone, kyc_id, wallet_balance, pin)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [id, fullName, dob || '', email || '', phone || '', kycId || '', walletBalance || 100000, pin || '1234']
-    );
-    res.json({
-      success: true,
-      user: { id, fullName, dob, email, phone, kycId, walletBalance: parseFloat(walletBalance || 100000), pin: pin || '1234' }
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+
+  // Check duplicate in memory
+  const dup = inMemoryUsers.find((u) => u.email === email || u.phone === phone);
+  if (dup) {
+    return res.status(400).json({ error: 'User with this email or phone number already exists.' });
   }
+
+  const newUser = {
+    id,
+    fullName,
+    dob: dob || '',
+    email: email || '',
+    phone: phone || '',
+    kycId: kycId || '',
+    walletBalance: parseFloat(walletBalance || 100000),
+    pin: pin || '1234',
+    createdAt: new Date().toISOString(),
+  };
+
+  inMemoryUsers.push(newUser);
+
+  const pool = getPgPool();
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO users (id, full_name, dob, email, phone, kyc_id, wallet_balance, pin)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [id, fullName, dob || '', email || '', phone || '', kycId || '', newUser.walletBalance, newUser.pin]
+      );
+    } catch (err) {
+      console.log('[Auth Signup] DB insert fallback to memory');
+    }
+  }
+
+  return res.json({ success: true, user: newUser });
 });
 
 // POST Auth Login
 app.post('/api/auth/login', async (req, res) => {
-  const pool = getPgPool();
-  if (!pool) return res.status(503).json({ error: 'Database not connected' });
   const { identifier, pin } = req.body;
-  try {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE (email = $1 OR phone = $1 OR id = $1) AND pin = $2',
-      [identifier, pin]
-    );
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid Email/Phone/ID or Security PIN.' });
-    }
-    const row = result.rows[0];
-    const user = {
-      id: row.id,
-      fullName: row.full_name,
-      dob: row.dob,
-      email: row.email,
-      phone: row.phone,
-      kycId: row.kyc_id,
-      walletBalance: parseFloat(row.wallet_balance),
-      pin: row.pin,
-      createdAt: row.created_at,
-    };
-    res.json({ success: true, user });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  const memUser = inMemoryUsers.find(
+    (u) => (u.email === identifier || u.phone === identifier || u.id === identifier) && u.pin === pin
+  );
+  if (memUser) {
+    return res.json({ success: true, user: memUser });
   }
+
+  const pool = getPgPool();
+  if (pool) {
+    try {
+      const result = await pool.query(
+        'SELECT * FROM users WHERE (email = $1 OR phone = $1 OR id = $1) AND pin = $2',
+        [identifier, pin]
+      );
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        const user = {
+          id: row.id,
+          fullName: row.full_name,
+          dob: row.dob,
+          email: row.email,
+          phone: row.phone,
+          kycId: row.kyc_id,
+          walletBalance: parseFloat(row.wallet_balance),
+          pin: row.pin,
+          createdAt: row.created_at,
+        };
+        return res.json({ success: true, user });
+      }
+    } catch (err) {
+      console.log('[Auth Login] DB query fallback to memory');
+    }
+  }
+
+  return res.status(401).json({ error: 'Invalid Email/Phone/ID or Security PIN.' });
 });
 
 // GET Purchases from PostgreSQL

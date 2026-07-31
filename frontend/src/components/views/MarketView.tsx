@@ -36,23 +36,10 @@ export const MarketView: React.FC = () => {
 
   const t = translations[language];
 
-  const [manualPriceInput, setManualPriceInput] = useState<string>(
-    currentSpotPrice.pricePerKg.toString()
-  );
   const [targetAlertPrice, setTargetAlertPrice] = useState<string>('650');
   const [alertCondition, setAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
   const [alertNote, setAlertNote] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
-  const handleAdminPriceUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseFloat(manualPriceInput);
-    if (!isNaN(val) && val > 0) {
-      setSpotPriceManual(val);
-      setStatusMessage(`Spot price override applied: ₹${val.toFixed(2)}/kg`);
-      setTimeout(() => setStatusMessage(null), 3000);
-    }
-  };
 
   const handleCreateAlert = (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,42 +172,8 @@ export const MarketView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Admin Override & Alert Setup */}
+        {/* Right Side: Price Alert Setup */}
         <div className="space-y-6">
-          {/* Admin Spot Price Override Box */}
-          <div className="bg-[#111827] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-              <Sliders className="w-4 h-4 text-cyan-400" />
-              <span>Admin Price Override Control</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Manually set the market spot price to test portfolio P&L fluctuations and sell triggers.
-            </p>
-
-            <form onSubmit={handleAdminPriceUpdate} className="space-y-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                  New Spot Price (₹/Kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={manualPriceInput}
-                  onChange={(e) => setManualPriceInput(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white font-bold text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500"
-                  placeholder="e.g. 620"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95 flex items-center justify-center space-x-2"
-              >
-                <Zap className="w-4 h-4" />
-                <span>Apply Price Override</span>
-              </button>
-            </form>
-          </div>
 
           {/* Quick Price Alert Form */}
           <div className="bg-[#111827] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">

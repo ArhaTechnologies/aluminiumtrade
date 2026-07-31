@@ -181,39 +181,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [language, users, marketPriceHistory, simulatorActive, purchases, sales, alerts, notifications, lastTransaction]);
 
-  // Fetch initial state from PostgreSQL database if connected
+  // Fetch and poll server state to sync users & trades across all connected devices (Laptop, Mobile, Desktop)
   useEffect(() => {
-    async function loadFromPg() {
+    let isSubscribed = true;
+
+    async function syncWithServer() {
       try {
-        const dbRes = await fetch('/api/db/status');
-        const dbStatus = await dbRes.json();
-        if (dbStatus.connected) {
-          await fetch('/api/db/init', { method: 'POST' });
+        const [usersRes, purchasesRes, salesRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/purchases'),
+          fetch('/api/sales')
+        ]);
 
-          const [usersRes, purchasesRes, salesRes] = await Promise.all([
-            fetch('/api/users'),
-            fetch('/api/purchases'),
-            fetch('/api/sales')
-          ]);
+        if (!isSubscribed) return;
 
-          if (usersRes.ok) {
-            const uData = await usersRes.json();
-            if (Array.isArray(uData) && uData.length > 0) setUsers(uData);
-          }
-          if (purchasesRes.ok) {
-            const pData = await purchasesRes.json();
-            if (Array.isArray(pData) && pData.length > 0) setPurchases(pData);
-          }
-          if (salesRes.ok) {
-            const sData = await salesRes.json();
-            if (Array.isArray(sData) && sData.length > 0) setSales(sData);
+        if (usersRes.ok) {
+          const uData = await usersRes.json();
+          if (Array.isArray(uData) && uData.length > 0) {
+            setUsers((prev) => {
+              // Merge server users with local state without losing new items
+              const serverIds = new Set(uData.map((u: User) => u.id));
+              const localOnly = prev.filter((u) => !serverIds.has(u.id));
+              return [...uData, ...localOnly];
+            });
           }
         }
+        if (purchasesRes.ok) {
+          const pData = await purchasesRes.json();
+          if (Array.isArray(pData) && pData.length > 0) setPurchases(pData);
+        }
+        if (salesRes.ok) {
+          const sData = await salesRes.json();
+          if (Array.isArray(sData) && sData.length > 0) setSales(sData);
+        }
       } catch (err) {
-        console.log('[PG Sync] Connection fallback to local state:', err);
+        // Fallback to local storage state if server is unreachable
       }
     }
-    loadFromPg();
+
+    syncWithServer();
+    const syncInterval = setInterval(syncWithServer, 4000);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(syncInterval);
+    };
   }, []);
 
   // Market Price Simulator interval (Globally synchronized across all devices)
