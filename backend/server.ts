@@ -10,8 +10,8 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 const { Pool, Client } = pkg;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilename = typeof __filename !== 'undefined' ? __filename : '';
+const currentDirname = typeof __dirname !== 'undefined' ? __dirname : (currentFilename ? path.dirname(currentFilename) : process.cwd());
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
