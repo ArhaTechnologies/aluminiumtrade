@@ -73,7 +73,6 @@ export const Sidebar: React.FC = () => {
       badge: unreadAlerts > 0 ? `${unreadAlerts}` : undefined,
       badgeColor: 'bg-amber-500/20 text-amber-400',
     },
-    { id: 'import', labelKey: 'import', icon: UploadCloud },
     { id: 'reports', labelKey: 'reports', icon: FileText },
   ];
 

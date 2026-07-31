@@ -107,7 +107,6 @@ export type ActiveTab =
   | 'calculator' 
   | 'leaderboard' 
   | 'alerts' 
-  | 'import' 
   | 'reports'
   | 'database'
   | 'ai';

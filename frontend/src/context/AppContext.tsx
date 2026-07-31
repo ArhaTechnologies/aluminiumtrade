@@ -216,25 +216,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     loadFromPg();
   }, []);
 
-  // Market Price Simulator interval
+  // Market Price Simulator interval (Globally synchronized across all devices)
   useEffect(() => {
     if (!simulatorActive) return;
 
     const interval = setInterval(() => {
+      const nowMs = Date.now();
+      const timeSec = Math.floor(nowMs / 5000);
+      const wave1 = Math.sin(timeSec * 0.08) * 8.5;
+      const wave2 = Math.cos(timeSec * 0.02) * 14.2;
+      const wave3 = Math.sin(timeSec * 0.005) * 22.0;
+      
+      const rawPrice = 600 + wave1 + wave2 + wave3;
+      const syncedPrice = Number(Math.max(450, Math.min(900, rawPrice)).toFixed(2));
+      const syncedChange = Number((Math.sin(timeSec * 0.015) * 2.8).toFixed(2));
+
       setMarketPriceHistory((prev) => {
-        const last = prev[prev.length - 1] || { pricePerKg: 600 };
-        // Random fluctuation between -1.5% and +1.5%
-        const deltaPercent = (Math.random() - 0.48) * 3; // slightly upward bias
-        let newPrice = Math.round((last.pricePerKg * (1 + deltaPercent / 100)) * 100) / 100;
-        newPrice = Math.max(300, Math.min(1500, newPrice)); // Bounds safeguard
+        const last = prev[prev.length - 1];
+        if (last && last.pricePerKg === syncedPrice) return prev;
 
         const newPoint: MarketPricePoint = {
-          id: `P-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          pricePerKg: newPrice,
-          timestamp: new Date().toISOString(),
-          change24h: Math.round(deltaPercent * 100) / 100,
-          high24h: Math.max(last.high24h || newPrice, newPrice),
-          low24h: Math.min(last.low24h || newPrice, newPrice),
+          id: `P-SYNC-${timeSec}`,
+          pricePerKg: syncedPrice,
+          timestamp: new Date(nowMs).toISOString(),
+          change24h: syncedChange,
+          high24h: 644.70,
+          low24h: 561.80,
           source: 'SIMULATOR',
         };
 
@@ -243,10 +250,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           alerts.forEach((rule, idx) => {
             if (rule.active) {
               if (
-                (rule.condition === 'ABOVE' && newPrice >= rule.targetPrice) ||
-                (rule.condition === 'BELOW' && newPrice <= rule.targetPrice)
+                (rule.condition === 'ABOVE' && syncedPrice >= rule.targetPrice) ||
+                (rule.condition === 'BELOW' && syncedPrice <= rule.targetPrice)
               ) {
-                const alertMsg = `Spot price reached ₹${newPrice}/kg (${rule.condition} target ₹${rule.targetPrice}/kg)`;
+                const alertMsg = `Spot price reached ₹${syncedPrice}/kg (${rule.condition} target ₹${rule.targetPrice}/kg)`;
                 setNotifications((n) => {
                   // Avoid spamming duplicate message within 10 seconds
                   if (

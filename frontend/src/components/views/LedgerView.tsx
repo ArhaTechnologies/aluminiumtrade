@@ -91,6 +91,20 @@ export const LedgerView: React.FC = () => {
 
   return (
     <div className="p-3 sm:p-6 space-y-5 text-slate-100 max-w-7xl mx-auto print:p-0 print:bg-white print:text-black">
+      {/* Dedicated Print Header */}
+      <div className="hidden print:block mb-4 pb-3 border-b-2 border-slate-900 text-black">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-slate-900">ALUTRADE PRO — OFFICIAL TRADE LEDGER AUDIT</h1>
+            <p className="text-xs text-slate-600">Physical Aluminum Trading & Portfolio Analytics Engine</p>
+          </div>
+          <div className="text-right text-xs text-slate-800">
+            <p><strong>Date:</strong> {new Date().toLocaleDateString('en-IN')}</p>
+            <p><strong>Spot Rate:</strong> ₹{currentSpotPrice.pricePerKg}/kg</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header Banner */}
       <div className="bg-[#111827] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
@@ -219,8 +233,8 @@ export const LedgerView: React.FC = () => {
         {activeLedgerTab === 'PURCHASES' && (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="hidden md:block print:block overflow-x-auto">
+              <table className="w-full text-left text-xs printable-table">
                 <thead className="bg-slate-900 text-slate-400 font-bold uppercase text-[10px]">
                   <tr>
                     <th className="p-3 rounded-l-lg">Buy Ref</th>
@@ -287,7 +301,7 @@ export const LedgerView: React.FC = () => {
             </div>
 
             {/* Mobile Cards View */}
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-3 md:hidden print:hidden">
               {filteredPurchases.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 text-xs">No purchase records found.</div>
               ) : (
@@ -340,8 +354,8 @@ export const LedgerView: React.FC = () => {
         {activeLedgerTab === 'SALES' && (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="hidden md:block print:block overflow-x-auto">
+              <table className="w-full text-left text-xs printable-table">
                 <thead className="bg-slate-900 text-slate-400 font-bold uppercase text-[10px]">
                   <tr>
                     <th className="p-3 rounded-l-lg">Sell Ref</th>
@@ -404,7 +418,7 @@ export const LedgerView: React.FC = () => {
             </div>
 
             {/* Mobile Cards View */}
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-3 md:hidden print:hidden">
               {filteredSales.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 text-xs">No sales records found.</div>
               ) : (

@@ -1,1 +1,59 @@
 @import "tailwindcss";
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide navigation, sidebars, buttons & non-printable elements */
+  header,
+  aside,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Expand main printable container */
+  main,
+  .print-area {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Printable table styling */
+  .printable-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+  }
+
+  .printable-table th {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    border: 1px solid #94a3b8 !important;
+    padding: 6px 8px !important;
+    font-weight: bold !important;
+  }
+
+  .printable-table td {
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    padding: 6px 8px !important;
+  }
+
+  .printable-table tr {
+    page-break-inside: avoid;
+  }
+}

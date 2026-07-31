@@ -14,7 +14,6 @@ import { PnLReportView } from './components/views/PnLReportView';
 import { ProfitCalculatorView } from './components/views/ProfitCalculatorView';
 import { LeaderboardView } from './components/views/LeaderboardView';
 import { AlertsView } from './components/views/AlertsView';
-import { ImportDataView } from './components/views/ImportDataView';
 import { ReportsExportView } from './components/views/ReportsExportView';
 import { DatabaseView } from './components/views/DatabaseView';
 import { AiAnalystView } from './components/views/AiAnalystView';
@@ -39,7 +38,6 @@ const MainContent: React.FC = () => {
       {activeTab === 'calculator' && <ProfitCalculatorView />}
       {activeTab === 'leaderboard' && <LeaderboardView />}
       {activeTab === 'alerts' && <AlertsView />}
-      {activeTab === 'import' && <ImportDataView />}
       {activeTab === 'reports' && <ReportsExportView />}
       {activeTab === 'database' && <DatabaseView />}
     </main>
