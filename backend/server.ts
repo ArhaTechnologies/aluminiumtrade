@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createViteServer } from 'vite';
 import pkg from 'pg';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -14,9 +14,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
+app.use(cors());
 app.use(express.json());
+
+// Root Health & API Status Routes
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    app: 'AluTrade PRO Backend API',
+    version: '1.0.0',
+    message: 'Backend server is running successfully.',
+    endpoints: {
+      health: '/api/health',
+      aiChat: '/api/ai/chat (POST)',
+    },
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Lazy-initialized PostgreSQL Connection Pool
 let pgPool: InstanceType<typeof Pool> | null = null;
@@ -636,20 +655,19 @@ Answer the user's trading question concisely in clear, professional English (or 
   }
 });
 
-// Vite Middleware Integration
+// Server Startup Integration
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
+  const distPath = path.join(process.cwd(), '../frontend/dist');
+  try {
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(path.join(distPath, 'index.html'), (err) => {
+        if (err) next();
+      });
     });
+  } catch (err) {
+    console.log('Serving API mode');
   }
 
   // Auto-initialize DB tables on startup if pool is available
@@ -662,7 +680,7 @@ async function startServer() {
   });
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 AluTrade Full-Stack Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 AluTrade Backend Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

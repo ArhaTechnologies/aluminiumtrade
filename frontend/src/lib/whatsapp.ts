@@ -83,11 +83,12 @@ _Generated via AluTrade PRO Metal Trading Platform_`;
  * WhatsApp Broadcast for Live Spot Rate Card
  */
 export function shareSpotRateWhatsApp(spotPrice: MarketPricePoint, phone?: string) {
-  const isUp = spotPrice.change24h >= 0;
+  const change = spotPrice.change24h ?? 0;
+  const isUp = change >= 0;
   const text = `⚡ *ALUTRADE PRO — LIVE ALUMINUM SPOT RATE*
 ----------------------------------------
 *Current Rate:* *₹${spotPrice.pricePerKg.toFixed(2)} / kg*
-*24h Trend:* ${isUp ? '📈 +' : '📉 '}${spotPrice.change24h.toFixed(2)}%
+*24h Trend:* ${isUp ? '📈 +' : '📉 '}${change.toFixed(2)}%
 *Market Status:* LIVE / ACTIVE
 *Timestamp:* ${new Date(spotPrice.timestamp).toLocaleString('en-IN')}
 

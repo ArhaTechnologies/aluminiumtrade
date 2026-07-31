@@ -127,7 +127,7 @@ export const AiAnalystView: React.FC = () => {
           context: {
             spotPrice: currentSpotPrice.pricePerKg,
             userBalance: selectedUser ? selectedUser.walletBalance : 0,
-            userInventory: selectedUser ? selectedUser.inventoryKg : totalHoldingsKg,
+            userInventory: totalHoldingsKg,
             holdingsCount: activeHoldings.length,
           },
         }),
