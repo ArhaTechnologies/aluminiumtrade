@@ -657,7 +657,12 @@ Answer the user's trading question concisely in clear, professional English (or 
 
 // Server Startup Integration
 async function startServer() {
-  const distPath = path.join(process.cwd(), '../frontend/dist');
+  const rootFrontendDist = path.join(process.cwd(), 'frontend', 'dist');
+  const parentFrontendDist = path.join(process.cwd(), '..', 'frontend', 'dist');
+  const distPath = (process.env.NODE_ENV === 'production' && require('fs').existsSync(rootFrontendDist)) 
+    ? rootFrontendDist 
+    : parentFrontendDist;
+
   try {
     app.use(express.static(distPath));
     app.get('*', (req, res, next) => {
