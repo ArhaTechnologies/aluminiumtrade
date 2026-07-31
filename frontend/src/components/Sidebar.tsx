@@ -63,7 +63,6 @@ export const Sidebar: React.FC = () => {
     },
     { id: 'ledger', labelKey: 'ledger', icon: FileSpreadsheet },
     { id: 'users', labelKey: 'users', icon: Users },
-    { id: 'pnl_report', labelKey: 'pnlReport', icon: LineChart },
     { id: 'calculator', labelKey: 'calculator', icon: Calculator, badge: 'PRO', badgeColor: 'bg-indigo-500/20 text-indigo-400' },
     { id: 'leaderboard', labelKey: 'leaderboard', icon: Trophy },
     {
@@ -73,7 +72,6 @@ export const Sidebar: React.FC = () => {
       badge: unreadAlerts > 0 ? `${unreadAlerts}` : undefined,
       badgeColor: 'bg-amber-500/20 text-amber-400',
     },
-    { id: 'reports', labelKey: 'reports', icon: FileText },
   ];
 
   const handleSelectTab = (tabId: ActiveTab) => {

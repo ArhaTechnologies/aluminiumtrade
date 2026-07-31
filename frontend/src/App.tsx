@@ -10,11 +10,9 @@ import { HoldingsView } from './components/views/HoldingsView';
 import { LedgerView } from './components/views/LedgerView';
 import { UserManagementView } from './components/views/UserManagementView';
 import { UserProfileView } from './components/views/UserProfileView';
-import { PnLReportView } from './components/views/PnLReportView';
 import { ProfitCalculatorView } from './components/views/ProfitCalculatorView';
 import { LeaderboardView } from './components/views/LeaderboardView';
 import { AlertsView } from './components/views/AlertsView';
-import { ReportsExportView } from './components/views/ReportsExportView';
 import { DatabaseView } from './components/views/DatabaseView';
 import { AiAnalystView } from './components/views/AiAnalystView';
 import { AuthPinModal } from './components/modals/AuthPinModal';
@@ -34,11 +32,9 @@ const MainContent: React.FC = () => {
       {activeTab === 'ledger' && <LedgerView />}
       {activeTab === 'users' && <UserManagementView />}
       {activeTab === 'user_profile' && <UserProfileView />}
-      {activeTab === 'pnl_report' && <PnLReportView />}
       {activeTab === 'calculator' && <ProfitCalculatorView />}
       {activeTab === 'leaderboard' && <LeaderboardView />}
       {activeTab === 'alerts' && <AlertsView />}
-      {activeTab === 'reports' && <ReportsExportView />}
       {activeTab === 'database' && <DatabaseView />}
     </main>
   );

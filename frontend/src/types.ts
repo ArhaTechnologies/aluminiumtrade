@@ -103,10 +103,8 @@ export type ActiveTab =
   | 'ledger' 
   | 'users' 
   | 'user_profile'
-  | 'pnl_report' 
   | 'calculator' 
   | 'leaderboard' 
   | 'alerts' 
-  | 'reports'
   | 'database'
   | 'ai';
