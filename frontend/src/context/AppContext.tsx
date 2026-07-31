@@ -197,22 +197,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (usersRes.ok) {
           const uData = await usersRes.json();
-          if (Array.isArray(uData) && uData.length > 0) {
-            setUsers((prev) => {
-              // Merge server users with local state without losing new items
-              const serverIds = new Set(uData.map((u: User) => u.id));
-              const localOnly = prev.filter((u) => !serverIds.has(u.id));
-              return [...uData, ...localOnly];
-            });
+          if (Array.isArray(uData)) {
+            setUsers(uData);
           }
         }
         if (purchasesRes.ok) {
           const pData = await purchasesRes.json();
-          if (Array.isArray(pData) && pData.length > 0) setPurchases(pData);
+          if (Array.isArray(pData)) {
+            setPurchases(pData);
+          }
         }
         if (salesRes.ok) {
           const sData = await salesRes.json();
-          if (Array.isArray(sData) && sData.length > 0) setSales(sData);
+          if (Array.isArray(sData)) {
+            setSales(sData);
+          }
         }
       } catch (err) {
         // Fallback to local storage state if server is unreachable
