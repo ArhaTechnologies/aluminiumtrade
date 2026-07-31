@@ -7,7 +7,6 @@ import {
   Coins,
   Clock,
   Download,
-  Printer,
   FileText,
   Search,
   RotateCcw,
@@ -85,28 +84,10 @@ export const LedgerView: React.FC = () => {
     });
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div className="p-3 sm:p-6 space-y-5 text-slate-100 max-w-7xl mx-auto print:p-0 print:bg-white print:text-black">
-      {/* Dedicated Print Header */}
-      <div className="hidden print:block mb-4 pb-3 border-b-2 border-slate-900 text-black">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-slate-900">ALUTRADE PRO — OFFICIAL TRADE LEDGER AUDIT</h1>
-            <p className="text-xs text-slate-600">Physical Aluminum Trading & Portfolio Analytics Engine</p>
-          </div>
-          <div className="text-right text-xs text-slate-800">
-            <p><strong>Date:</strong> {new Date().toLocaleDateString('en-IN')}</p>
-            <p><strong>Spot Rate:</strong> ₹{currentSpotPrice.pricePerKg}/kg</p>
-          </div>
-        </div>
-      </div>
-
+    <div className="p-3 sm:p-6 space-y-5 text-slate-100 max-w-7xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-[#111827] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+      <div className="bg-[#111827] border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <FileSpreadsheet className="w-5 h-5 text-cyan-400 shrink-0" />
@@ -135,14 +116,6 @@ export const LedgerView: React.FC = () => {
           >
             <Download className="w-3.5 h-3.5" />
             <span>Excel (.xlsx)</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs px-3 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition-all"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print</span>
           </button>
         </div>
       </div>

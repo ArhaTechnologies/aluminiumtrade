@@ -7,7 +7,6 @@ import { openWhatsAppShare } from '../../lib/whatsapp';
 import {
   FileText,
   Download,
-  Printer,
   FileSpreadsheet,
   Calendar,
   Filter,
@@ -233,9 +232,9 @@ _Generated via AluTrade PRO Platform_`;
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 text-slate-100 max-w-5xl mx-auto print:p-0 print:bg-white print:text-black">
+    <div className="p-4 sm:p-6 space-y-6 text-slate-100 max-w-5xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+      <div className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <FileText className="w-5 h-5 text-cyan-400" />
@@ -247,14 +246,6 @@ _Generated via AluTrade PRO Platform_`;
             Filter trading activity by custom date range, download PDF/Excel/CSV statements, or send instant WhatsApp receipts.
           </p>
         </div>
-
-        <button
-          onClick={() => window.print()}
-          className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center space-x-2 self-start md:self-auto"
-        >
-          <Printer className="w-4 h-4 text-cyan-400" />
-          <span>Print Statement Page</span>
-        </button>
       </div>
 
       {statusMsg && (
