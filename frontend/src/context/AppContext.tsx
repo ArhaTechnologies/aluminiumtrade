@@ -136,7 +136,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [pinModalOpen, setPinModalOpen] = useState<boolean>(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(() => savedState?.currentUser || null);
 
