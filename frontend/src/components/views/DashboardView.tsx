@@ -542,7 +542,7 @@ export const DashboardView: React.FC = () => {
               <span>Recent Executed Transactions</span>
             </h3>
             <button
-              onClick={() => setActiveTab('ledger')}
+              onClick={() => setActiveTab('reports')}
               className="text-xs text-cyan-400 hover:underline font-semibold"
             >
               View Full History →

@@ -61,17 +61,9 @@ export const Sidebar: React.FC = () => {
       badge: activeHoldings.length ? `${activeHoldings.length}` : undefined,
       badgeColor: 'bg-emerald-500/20 text-emerald-400',
     },
-    { id: 'ledger', labelKey: 'ledger', icon: FileSpreadsheet },
     { id: 'users', labelKey: 'users', icon: Users },
     { id: 'calculator', labelKey: 'calculator', icon: Calculator, badge: 'PRO', badgeColor: 'bg-indigo-500/20 text-indigo-400' },
     { id: 'leaderboard', labelKey: 'leaderboard', icon: Trophy },
-    {
-      id: 'alerts',
-      labelKey: 'alerts',
-      icon: Bell,
-      badge: unreadAlerts > 0 ? `${unreadAlerts}` : undefined,
-      badgeColor: 'bg-amber-500/20 text-amber-400',
-    },
     { id: 'reports', labelKey: 'reports', icon: FileText },
   ];
 

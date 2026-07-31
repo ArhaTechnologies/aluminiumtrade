@@ -100,12 +100,10 @@ export type ActiveTab =
   | 'buy' 
   | 'sell' 
   | 'holdings' 
-  | 'ledger' 
   | 'users' 
   | 'user_profile'
   | 'calculator' 
   | 'leaderboard' 
-  | 'alerts' 
   | 'reports'
   | 'database'
   | 'ai';

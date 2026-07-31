@@ -96,7 +96,7 @@ export const SellView: React.FC = () => {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       }
       setTimeout(() => {
-        setActiveTab('ledger');
+        setActiveTab('holdings');
       }, 1500);
     } else {
       setResultMessage({ type: 'ERROR', text: res.message });
@@ -125,6 +125,26 @@ export const SellView: React.FC = () => {
         </div>
       </div>
 
+      {/* Always Visible Trader Selector Bar */}
+      <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex-1 space-y-1">
+          <label className="text-xs font-bold text-slate-300 block">
+            Select Seller / Trader
+          </label>
+          <select
+            value={selectedUser?.id || ''}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-700 text-white font-semibold text-xs rounded-xl p-3 focus:outline-none focus:border-cyan-500 cursor-pointer"
+          >
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                👤 {u.fullName} ({formatINR(u.walletBalance)} wallet balance)
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {resultMessage && (
         <div
           className={`p-4 rounded-xl text-xs font-semibold flex items-center space-x-2 border ${
@@ -147,37 +167,19 @@ export const SellView: React.FC = () => {
           <Boxes className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-sm font-bold text-white">No Unsold Inventory for {selectedUser?.fullName}</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            This trader currently holds 0 Kg active aluminum stock. Purchase stock first before executing sell orders.
+            {selectedUser?.fullName} currently holds 0 Kg active aluminum stock. You can select another trader from the dropdown above or buy stock for {selectedUser?.fullName}.
           </p>
           <button
             onClick={() => setActiveTab('buy')}
-            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all"
+            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
           >
-            Buy Aluminum Now →
+            Buy Aluminum for {selectedUser?.fullName} →
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Form Side */}
           <form onSubmit={handleExecuteSell} className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5">
-            {/* Select User */}
-            <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">
-                Select Seller / Trader
-              </label>
-              <select
-                value={selectedUser?.id || ''}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 text-white font-semibold text-xs rounded-xl p-3 focus:outline-none focus:border-cyan-500 cursor-pointer"
-              >
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    👤 {u.fullName} ({formatINR(u.walletBalance)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Select Target Lot */}
             <div>
               <label className="text-xs font-bold text-slate-300 block mb-1.5">
@@ -248,68 +250,58 @@ export const SellView: React.FC = () => {
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center space-x-2 border-b border-slate-800 pb-3 mb-4">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white">Live Realized P&L Preview</h3>
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-bold text-white">Pre-Execution Yield Audit</h3>
               </div>
 
-              {activeLot && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex justify-between text-slate-300">
-                    <span>Original Purchase Cost:</span>
-                    <span className="font-bold text-white">₹{activeLot.buyPricePerKg}/kg</span>
+              <div className="space-y-3.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Target Lot ID:</span>
+                  <span className="font-mono text-cyan-400 font-bold">{activeLot?.purchaseId || '—'}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Cost Basis (Buy Rate):</span>
+                  <span className="font-semibold text-white">₹{activeLot?.buyPricePerKg || 0}/kg</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Current Market Rate:</span>
+                  <span className="font-semibold text-emerald-400">₹{currentPrice.toFixed(2)}/kg</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                  <span className="text-slate-400">Total Purchase Cost:</span>
+                  <span className="font-mono text-slate-300 font-bold">{formatINR(costBasis)}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Total Gross Revenue:</span>
+                  <span className="font-mono text-white font-bold">{formatINR(saleProceeds)}</span>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-white">Estimated Net Profit / Loss:</span>
+                    <span className={`text-base font-black flex items-center space-x-1 ${netPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {netPnL >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                      <span>{netPnL >= 0 ? '+' : ''}{formatINR(netPnL)}</span>
+                    </span>
                   </div>
 
-                  <div className="flex justify-between text-slate-300">
-                    <span>Current Market Sale Rate:</span>
-                    <span className="font-bold text-emerald-400">₹{currentPrice}/kg</span>
-                  </div>
-
-                  <div className="flex justify-between text-slate-300 border-t border-slate-800/80 pt-2">
-                    <span>Cost Basis for {sellQty} Kg:</span>
-                    <span className="font-bold text-white">{formatINR(costBasis)}</span>
-                  </div>
-
-                  <div className="flex justify-between text-slate-300">
-                    <span>Total Sale Proceeds:</span>
-                    <span className="font-bold text-emerald-400">{formatINR(saleProceeds)}</span>
-                  </div>
-
-                  <div className="border-t-2 border-dashed border-slate-700 my-3"></div>
-
-                  <div
-                    className={`p-4 rounded-xl border flex items-center justify-between ${
-                      netPnL >= 0
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                        : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                    }`}
-                  >
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400">
-                        Net Realized Profit / Loss
-                      </span>
-                      <p className="text-lg font-black">
-                        {netPnL >= 0 ? '+' : ''}
-                        {formatINR(netPnL)}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold text-slate-400">ROI %</span>
-                      <p className="text-base font-extrabold flex items-center justify-end space-x-1">
-                        {netPnL >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                        <span>
-                          {netPnL >= 0 ? '+' : ''}
-                          {roiPercent.toFixed(2)}%
-                        </span>
-                      </p>
-                    </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400">Return on Investment (ROI):</span>
+                    <span className={`font-mono font-bold ${roiPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {roiPercent >= 0 ? '+' : ''}{roiPercent.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[11px] text-slate-400 leading-relaxed">
-              💡 Sale proceeds will instantly credit the trader's cash wallet upon confirmation.
+            <div className="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl text-[11px] text-slate-400 flex items-start space-x-2">
+              <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <span>Proceeds from this sale will be instantly credited to {selectedUser?.fullName}'s wallet balance.</span>
             </div>
           </div>
         </div>
