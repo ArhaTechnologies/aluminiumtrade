@@ -400,6 +400,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!user) return { success: false, message: 'User not found.' };
 
     setUsers((prev) => prev.filter((u) => u.id !== userId));
+    setPurchases((prev) => prev.filter((p) => p.userId !== userId));
+    setSales((prev) => prev.filter((s) => s.userId !== userId));
 
     fetch(`/api/users/${userId}`, {
       method: 'DELETE',

@@ -41,9 +41,9 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
-      <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+      <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950 w-full max-w-full overflow-x-hidden">
         <Navbar />
-        <div className="flex flex-1 relative w-full">
+        <div className="flex flex-1 relative w-full max-w-full overflow-x-hidden">
           <Sidebar />
           <MainContent />
         </div>

@@ -181,16 +181,16 @@ export const Navbar: React.FC = () => {
 
         {/* Trader Account Auth Controls */}
         {currentUser ? (
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1">
-            <div className="flex items-center space-x-1.5 text-xs font-semibold">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 bg-slate-900 border border-slate-700 rounded-lg px-2 sm:px-2.5 py-1">
+            <div className="flex items-center space-x-1 sm:space-x-1.5 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-              <span className="text-white font-bold max-w-[80px] sm:max-w-none truncate">{currentUser.fullName}</span>
-              <span className="text-cyan-400 font-mono text-[11px]">({formatINR(currentUser.walletBalance)})</span>
+              <span className="text-white font-bold max-w-[75px] sm:max-w-[150px] truncate">{currentUser.fullName}</span>
+              <span className="text-cyan-400 font-mono text-[11px] hidden sm:inline">({formatINR(currentUser.walletBalance)})</span>
             </div>
             <button
               onClick={logoutUser}
               title="Logout Session"
-              className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+              className="p-1 text-slate-400 hover:text-rose-400 transition-colors shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

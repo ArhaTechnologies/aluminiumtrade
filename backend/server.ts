@@ -351,6 +351,12 @@ app.delete('/api/users/:id', async (req, res) => {
   if (idx >= 0) {
     inMemoryUsers.splice(idx, 1);
   }
+  for (let i = inMemoryPurchases.length - 1; i >= 0; i--) {
+    if (inMemoryPurchases[i].userId === id) inMemoryPurchases.splice(i, 1);
+  }
+  for (let i = inMemorySales.length - 1; i >= 0; i--) {
+    if (inMemorySales[i].userId === id) inMemorySales.splice(i, 1);
+  }
 
   const pool = getPgPool();
   if (pool) {
