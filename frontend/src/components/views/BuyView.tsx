@@ -25,7 +25,8 @@ export const BuyView: React.FC = () => {
 
   const t = translations[language];
 
-  const [quantityInput, setQuantityInput] = useState<number>(100); // 100 kg default
+  // String quantity input for flexible typing without forcing values
+  const [quantityInput, setQuantityInput] = useState<string>('100');
   const [tradeNote, setTradeNote] = useState<string>('');
   const [resultMessage, setResultMessage] = useState<{ type: 'SUCCESS' | 'ERROR'; text: string } | null>(
     null
@@ -34,23 +35,26 @@ export const BuyView: React.FC = () => {
   const selectedUser = users.find((u) => u.id === selectedUserId) || users[0];
   const unitPrice = currentSpotPrice.pricePerKg;
 
-  const subtotal = quantityInput * unitPrice;
+  const numQuantity = parseFloat(quantityInput) || 0;
+  const subtotal = numQuantity * unitPrice;
   const totalPayable = subtotal;
-  const hasEnoughCash = selectedUser ? selectedUser.walletBalance >= totalPayable : false;
-  const remainingWallet = selectedUser ? selectedUser.walletBalance - totalPayable : 0;
+
+  const walletBalance = selectedUser ? selectedUser.walletBalance : 0;
+  const remainingWallet = walletBalance - totalPayable;
+  const hasEnoughCash = selectedUser ? walletBalance >= totalPayable && numQuantity > 0 : false;
 
   const handleExecuteBuy = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
 
-    if (quantityInput <= 0) {
+    if (numQuantity <= 0) {
       setResultMessage({ type: 'ERROR', text: 'Please specify a valid quantity greater than 0.' });
       return;
     }
 
     const res = executeBuyTrade({
       userId: selectedUser.id,
-      quantityKg: quantityInput,
+      quantityKg: numQuantity,
       pricePerKg: unitPrice,
       note: tradeNote || 'Spot market purchase',
     });
@@ -92,7 +96,7 @@ export const BuyView: React.FC = () => {
         </div>
       </div>
 
-      {/* Always Visible Buyer Selector Bar (Identical to Seller Selector design) */}
+      {/* Always Visible Buyer Selector Bar */}
       <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1 space-y-1">
           <label className="text-xs font-bold text-slate-300 block">
@@ -140,15 +144,15 @@ export const BuyView: React.FC = () => {
                 Purchase Quantity (Kg)
               </label>
               <span className="text-[11px] font-mono text-cyan-400">
-                Total Weight: {quantityInput} Kg
+                Total Weight: {numQuantity} Kg
               </span>
             </div>
             <input
               type="number"
               min="1"
               value={quantityInput}
-              onChange={(e) => setQuantityInput(Math.max(1, parseInt(e.target.value) || 0))}
-              placeholder="e.g. 100"
+              onChange={(e) => setQuantityInput(e.target.value)}
+              placeholder="Enter weight in Kg"
               className="w-full bg-slate-900 border border-slate-700 text-white font-extrabold text-lg rounded-xl p-3 focus:outline-none focus:border-cyan-500"
             />
 
@@ -158,9 +162,9 @@ export const BuyView: React.FC = () => {
                 <button
                   key={qty}
                   type="button"
-                  onClick={() => setQuantityInput(qty)}
+                  onClick={() => setQuantityInput(String(qty))}
                   className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                    quantityInput === qty
+                    numQuantity === qty
                       ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
                       : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
                   }`}
@@ -198,15 +202,15 @@ export const BuyView: React.FC = () => {
                 <Wallet className="w-4 h-4" />
                 <span>Buyer Cash Balance:</span>
               </div>
-              <strong className="font-mono text-sm">{formatINR(selectedUser.walletBalance)}</strong>
+              <strong className="font-mono text-sm">{formatINR(walletBalance)}</strong>
             </div>
           )}
 
           <button
             type="submit"
-            disabled={!hasEnoughCash || quantityInput <= 0}
+            disabled={!hasEnoughCash}
             className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-lg ${
-              hasEnoughCash && quantityInput > 0
+              hasEnoughCash
                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-500/25 active:scale-95 cursor-pointer'
                 : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
             }`}
@@ -227,12 +231,12 @@ export const BuyView: React.FC = () => {
             <div className="space-y-3.5 text-xs">
               <div className="flex justify-between items-center text-slate-300">
                 <span>Selected Buyer:</span>
-                <span className="font-bold text-white">{selectedUser?.fullName}</span>
+                <span className="font-bold text-white">{selectedUser?.fullName || '—'}</span>
               </div>
 
               <div className="flex justify-between items-center text-slate-300">
                 <span>Selected Quantity:</span>
-                <span className="font-bold text-white">{quantityInput} Kg</span>
+                <span className="font-bold text-white">{numQuantity} Kg</span>
               </div>
 
               <div className="flex justify-between items-center text-slate-300">
@@ -263,7 +267,7 @@ export const BuyView: React.FC = () => {
 
           <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl text-[11px] text-slate-400 leading-relaxed flex items-start space-x-2">
             <Boxes className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-            <span>Purchased stock will immediately be credited to {selectedUser?.fullName}'s active inventory with lot tracking enabled.</span>
+            <span>Purchased stock will immediately be credited to {selectedUser?.fullName || 'selected trader'}'s active inventory with lot tracking enabled.</span>
           </div>
         </div>
       </div>

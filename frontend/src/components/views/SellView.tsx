@@ -4,12 +4,9 @@ import { translations, formatINR, formatDate } from '../../lib/i18n';
 import {
   Coins,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   CheckCircle2,
   Boxes,
-  ArrowUpRight,
-  ArrowDownRight,
   Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -37,13 +34,13 @@ export const SellView: React.FC = () => {
   }, [activeHoldings, selectedUser]);
 
   const [selectedLotId, setSelectedLotId] = useState<string>('');
-  const [sellQty, setSellQty] = useState<number>(0);
+  const [sellQtyInput, setSellQtyInput] = useState<string>('');
   const [sellNote, setSellNote] = useState<string>('');
   const [resultMessage, setResultMessage] = useState<{ type: 'SUCCESS' | 'ERROR'; text: string } | null>(
     null
   );
 
-  // Default lot selection if not selected
+  // Active lot matching selected lot ID or first lot in user holdings
   const activeLot = useMemo(() => {
     if (selectedLotId) {
       return userHoldings.find((h) => h.purchaseId === selectedLotId) || userHoldings[0];
@@ -51,22 +48,23 @@ export const SellView: React.FC = () => {
     return userHoldings[0];
   }, [userHoldings, selectedLotId]);
 
-  // Sync default quantity when active lot changes
+  // Sync default quantity ONLY when target lot ID or selected trader ID changes
   React.useEffect(() => {
     if (activeLot) {
       setSelectedLotId(activeLot.purchaseId);
-      setSellQty(activeLot.remainingQuantityKg);
+      setSellQtyInput(String(activeLot.remainingQuantityKg));
     } else {
       setSelectedLotId('');
-      setSellQty(0);
+      setSellQtyInput('0');
     }
-  }, [activeLot]);
+  }, [selectedLotId, selectedUser?.id, userHoldings.length]);
 
   const currentPrice = currentSpotPrice.pricePerKg;
+  const numSellQty = parseFloat(sellQtyInput) || 0;
 
   // Live P&L Calculations
-  const costBasis = activeLot ? sellQty * activeLot.buyPricePerKg : 0;
-  const saleProceeds = activeLot ? sellQty * currentPrice : 0;
+  const costBasis = activeLot ? numSellQty * activeLot.buyPricePerKg : 0;
+  const saleProceeds = activeLot ? numSellQty * currentPrice : 0;
   const netPnL = saleProceeds - costBasis;
   const roiPercent = costBasis > 0 ? (netPnL / costBasis) * 100 : 0;
 
@@ -74,7 +72,7 @@ export const SellView: React.FC = () => {
     e.preventDefault();
     if (!selectedUser || !activeLot) return;
 
-    if (sellQty <= 0 || sellQty > activeLot.remainingQuantityKg) {
+    if (numSellQty <= 0 || numSellQty > activeLot.remainingQuantityKg) {
       setResultMessage({
         type: 'ERROR',
         text: `Invalid quantity. Please enter between 1 and ${activeLot.remainingQuantityKg} Kg.`,
@@ -85,7 +83,7 @@ export const SellView: React.FC = () => {
     const res = executeSellTrade({
       userId: selectedUser.id,
       purchaseId: activeLot.purchaseId,
-      quantityKg: sellQty,
+      quantityKg: numSellQty,
       sellPricePerKg: currentPrice,
       note: sellNote || 'Liquidation sale',
     });
@@ -101,6 +99,12 @@ export const SellView: React.FC = () => {
     } else {
       setResultMessage({ type: 'ERROR', text: res.message });
     }
+  };
+
+  const setPercentageQty = (pct: number) => {
+    if (!activeLot) return;
+    const qty = Math.round((activeLot.remainingQuantityKg * pct) / 100);
+    setSellQtyInput(String(Math.max(1, qty)));
   };
 
   return (
@@ -214,12 +218,25 @@ export const SellView: React.FC = () => {
                 type="number"
                 min="1"
                 max={activeLot?.remainingQuantityKg || 1}
-                value={sellQty}
-                onChange={(e) =>
-                  setSellQty(Math.min(activeLot?.remainingQuantityKg || 1, Math.max(1, parseInt(e.target.value) || 0)))
-                }
+                value={sellQtyInput}
+                onChange={(e) => setSellQtyInput(e.target.value)}
+                placeholder="Enter quantity to sell"
                 className="w-full bg-slate-900 border border-slate-700 text-white font-extrabold text-lg rounded-xl p-3 focus:outline-none focus:border-cyan-500"
               />
+
+              {/* Quick Percentage Presets */}
+              <div className="flex items-center gap-2 mt-2.5">
+                {[25, 50, 75, 100].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setPercentageQty(pct)}
+                    className="flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white hover:border-cyan-500/50 transition-all cursor-pointer"
+                  >
+                    {pct === 100 ? '100% (All)' : `${pct}%`}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Trade Note */}
@@ -238,8 +255,12 @@ export const SellView: React.FC = () => {
 
             <button
               type="submit"
-              disabled={sellQty <= 0}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs py-3.5 rounded-xl uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
+              disabled={numSellQty <= 0 || (activeLot ? numSellQty > activeLot.remainingQuantityKg : true)}
+              className={`w-full py-3.5 rounded-xl uppercase tracking-wider flex items-center justify-center space-x-2 font-black text-xs transition-all shadow-lg ${
+                numSellQty > 0 && activeLot && numSellQty <= activeLot.remainingQuantityKg
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-emerald-500/20 active:scale-95 cursor-pointer'
+                  : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+              }`}
             >
               <Zap className="w-4 h-4" />
               <span>Confirm & Liquidate Sale</span>
@@ -260,48 +281,45 @@ export const SellView: React.FC = () => {
                   <span className="font-mono text-cyan-400 font-bold">{activeLot?.purchaseId || '—'}</span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Cost Basis (Buy Rate):</span>
-                  <span className="font-semibold text-white">₹{activeLot?.buyPricePerKg || 0}/kg</span>
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>Liquidation Quantity:</span>
+                  <span className="font-bold text-white">{numSellQty} Kg</span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Current Market Rate:</span>
-                  <span className="font-semibold text-emerald-400">₹{currentPrice.toFixed(2)}/kg</span>
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>Original Purchase Rate:</span>
+                  <span className="text-slate-300 font-medium">₹{activeLot?.buyPricePerKg.toFixed(2) || '0.00'}/kg</span>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
-                  <span className="text-slate-400">Total Purchase Cost:</span>
-                  <span className="font-mono text-slate-300 font-bold">{formatINR(costBasis)}</span>
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>Current Spot Sale Rate:</span>
+                  <span className="font-bold text-emerald-400">₹{currentPrice.toFixed(2)}/kg</span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Total Gross Revenue:</span>
-                  <span className="font-mono text-white font-bold">{formatINR(saleProceeds)}</span>
+                <div className="border-t border-slate-800 my-2"></div>
+
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>Cost Basis:</span>
+                  <span className="font-mono text-slate-200 font-bold">{formatINR(costBasis)}</span>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-white">Estimated Net Profit / Loss:</span>
-                    <span className={`text-base font-black flex items-center space-x-1 ${netPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {netPnL >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                      <span>{netPnL >= 0 ? '+' : ''}{formatINR(netPnL)}</span>
-                    </span>
-                  </div>
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>Gross Sale Proceeds:</span>
+                  <span className="font-mono text-emerald-400 font-bold">{formatINR(saleProceeds)}</span>
+                </div>
 
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-400">Return on Investment (ROI):</span>
-                    <span className={`font-mono font-bold ${roiPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {roiPercent >= 0 ? '+' : ''}{roiPercent.toFixed(2)}%
-                    </span>
-                  </div>
+                <div className="flex justify-between items-center text-sm font-black bg-slate-900 p-3 rounded-xl border border-slate-800">
+                  <span>Net Realized P&L:</span>
+                  <span className={`font-mono text-base font-black ${netPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {netPnL >= 0 ? '+' : ''}{formatINR(netPnL)} ({roiPercent >= 0 ? '+' : ''}{roiPercent.toFixed(2)}%)
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl text-[11px] text-slate-400 flex items-start space-x-2">
-              <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span>Proceeds from this sale will be instantly credited to {selectedUser?.fullName}'s wallet balance.</span>
+            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[11px] text-slate-400 leading-relaxed flex items-start space-x-2">
+              <Boxes className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>Proceeds ({formatINR(saleProceeds)}) will immediately be credited to {selectedUser?.fullName}'s cash wallet.</span>
             </div>
           </div>
         </div>
