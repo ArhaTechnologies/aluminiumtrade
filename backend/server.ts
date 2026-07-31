@@ -19,13 +19,13 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Root Health & API Status Routes
-app.get('/', (req, res) => {
+// Backend Health & API Status Route
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     app: 'AluTrade PRO Backend API',
     version: '1.0.0',
-    message: 'Backend server is running successfully.',
+    timestamp: new Date().toISOString(),
     endpoints: {
       health: '/api/health',
       aiChat: '/api/ai/chat (POST)',
@@ -657,23 +657,22 @@ Answer the user's trading question concisely in clear, professional English (or 
 
 // Server Startup Integration
 async function startServer() {
+  const fs = await import('fs');
   const rootFrontendDist = path.join(process.cwd(), 'frontend', 'dist');
   const parentFrontendDist = path.join(process.cwd(), '..', 'frontend', 'dist');
-  const distPath = (process.env.NODE_ENV === 'production' && require('fs').existsSync(rootFrontendDist)) 
-    ? rootFrontendDist 
-    : parentFrontendDist;
+  const distPath = fs.existsSync(rootFrontendDist)
+    ? rootFrontendDist
+    : (fs.existsSync(parentFrontendDist) ? parentFrontendDist : rootFrontendDist);
 
-  try {
-    app.use(express.static(distPath));
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api')) return next();
-      res.sendFile(path.join(distPath, 'index.html'), (err) => {
-        if (err) next();
-      });
+  console.log(`[Static Server] Serving frontend files from: ${distPath}`);
+
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distPath, 'index.html'), (err) => {
+      if (err) next();
     });
-  } catch (err) {
-    console.log('Serving API mode');
-  }
+  });
 
   // Auto-initialize DB tables on startup if pool is available
   initPostgresDb().then((res) => {
